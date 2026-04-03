@@ -20,20 +20,21 @@ export const ProdutoModel = {
         return result.rows[0]
     },
 
-    async buscarPorID(id:Pick<IProduto, "id">):Promise<IProduto | null> {
+    async buscarPorID(id:number):Promise<IProduto | null> {
         const query = "SELECT * FROM produtos WHERE id = $1"
         const { rows } = await pool.query(query,[id]);
         return rows [0] || null;
     },
-    async atualizar(id:Pick<IProduto, "id">, dados: Partial<IProduto>): Promise<IProduto | null> {
+    async atualizar(id: number, dados: Partial<IProduto>): Promise<IProduto | null> {
         const query = "UPDATE produtos SET nome = $1, preco = $2, estoque = $3 WHERE id = $4 RETURNING *"
-        const values = [dados.nome, dados.preco, dados.estoque];
+        const values = [dados.nome, dados.preco, dados.estoque, id];
         const result = await pool.query(query, values);
         return result.rows [0] || null;
     },
 
-    async delete(id:Pick<IProduto, "id">):Promise<boolean> {
-        const result = await pool.query("DELETE FROM produtos WHERE ID = $1", [id]);
+    async delete(id: number):Promise<boolean> {
+        const result = await pool.query("DELETE FROM produtos WHERE id = $1", [id]);
+        console.log(result)
         return (result.rowCount ?? 0) > 0
     }
 }

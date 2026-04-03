@@ -1,7 +1,14 @@
+// Listar todos
 GET http://localhost:3000/api/produtos
 
 ###
 
+// Listar por id
+GET http://localhost:3000/api/produtos/5
+
+###
+
+// Cadastrar
 POST http://localhost:3000/api/produtos
 Content-Type: application/json
 
@@ -12,3 +19,16 @@ Content-Type: application/json
 }
 
 ###
+
+// Atualizar
+PATCH http://localhost:3000/api/produtos/5
+Content-Type: application/json
+
+{
+    "nome": "Café puro"
+}
+
+###
+
+// Deletar
+DELETE  http://localhost:3000/api/produtos/4

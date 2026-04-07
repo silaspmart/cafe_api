@@ -6,6 +6,7 @@ export interface IItemPedido {
   produto_id: number;
   quantidade: number;
   preco_un: number;
+  nome: string;
 }
 
 export interface IPedido {
@@ -98,10 +99,43 @@ export const PedidoModel = {
           pedido_id: row.pedido_id!,
           produto_id: row.produto_id!,
           quantidade: row.quantidade!,
+          nome: row.produto_nome!,
           preco_un: row.produto_preco!,
         });
       }
     }
     return listaPedidos;
+  },
+
+  async deletar(id: number): Promise<boolean> {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const queryItens =
+        "SELECT produto_id, quantidade FROM itens_pedido where pedido_id = $1";
+      const { rows } = await client.query(queryItens, [id]);
+      for (const row of rows) {
+        await client.query(
+          "UPDATE produtos SET estoque = estoque + $1 WHERE id = $2",
+          [row.quantidade, row.produto_id]
+        );
+      }
+      const result = await client.query("DELETE FROM pedidos WHERE id = $1", [
+        id,
+      ]);
+      await client.query("COMMIT");
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  async mudarStatus(id: number, novoStatus: string): Promise<boolean> {
+    const query = "UPDATE pedidos SET status = $1 WHERE id = $2";
+    const result = await pool.query(query, [novoStatus, id]);
+    return (result.rowCount ?? 0) > 0;
   },
 };

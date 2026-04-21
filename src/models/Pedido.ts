@@ -138,4 +138,64 @@ export const PedidoModel = {
     const result = await pool.query(query, [novoStatus, id]);
     return (result.rowCount ?? 0) > 0;
   },
+
+  async getFaturamentoTotal(): Promise<{ faturamento_total: number }> {
+  const query = `
+    SELECT 
+      COALESCE(SUM(ip.quantidade * ip.preco_un), 0) AS faturamento_total
+    FROM pedidos p
+    JOIN itens_pedido ip ON p.id = ip.pedido_id
+    WHERE p.status = 'finalizado'`;
+
+  const { rows } = await pool.query(query);
+  return {
+    faturamento_total: Number(rows[0].faturamento_total),
+  };
+},
+
+async cancelar(id: number): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    // 1. Verificar status atual do pedido
+    const { rows: pedido } = await client.query(
+      "SELECT status FROM pedidos WHERE id = $1",
+      [id]
+    );
+    if (pedido.length === 0) {
+      throw new Error("Pedido não encontrado");
+    }
+    const statusAtual = pedido[0].status;
+    if (statusAtual !== "pendente") {
+      throw new Error(
+        "Apenas pedidos com status 'pendente' podem ser cancelados"
+      );
+    }
+    // 2. Buscar itens do pedido
+    const { rows: itens } = await client.query(
+      "SELECT produto_id, quantidade FROM itens_pedido WHERE pedido_id = $1",
+      [id]
+    );
+    // 3. Estornar estoque
+    for (const item of itens) {
+      await client.query(
+        "UPDATE produtos SET estoque = estoque + $1 WHERE id = $2",
+        [item.quantidade, item.produto_id]
+      );
+    }
+    // 4. Atualizar status para cancelado
+    await client.query(
+      "UPDATE pedidos SET status = 'cancelado' WHERE id = $1",
+      [id]
+    );
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 };
+

@@ -73,3 +73,41 @@ export const patchStatus = async (req: Request, res: Response) => {
       .json({ error: "Ocorreu um erro inesperado ao atualizar o pedido" });
   }
 };
+
+export const getRelatorio = async (req: Request, res: Response) => {
+  try {
+    const resultado = await PedidoModel.getFaturamentoTotal();
+    return res.json(resultado);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
+    return res.status(500).json({
+      error: "Erro ao gerar relatório financeiro",
+    });
+  }
+};
+
+export const cancelarPedido = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+
+  try {
+    const sucesso = await PedidoModel.cancelar(id);
+
+    if (!sucesso) {
+      return res.status(404).json({ error: "Pedido não encontrado" });
+    }
+
+    return res.json({ message: "Pedido cancelado com sucesso!" });
+  } catch (error: unknown) {
+  if (error instanceof Error) {
+    if (error.message === "Pedido não encontrado") {
+      return res.status(404).json({ error: error.message });
+    }
+    return res.status(400).json({ error: error.message });
+  }
+  return res.status(500).json({
+    error: "Erro ao cancelar pedido",
+  });
+}
+};

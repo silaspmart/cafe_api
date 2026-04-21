@@ -1,3 +1,4 @@
+// Criar pedidos
 POST http://localhost:3000/api/pedidos
 Content-Type: application/json
 
@@ -23,15 +24,28 @@ Content-Type: application/json
 }
 
 ###
+// Listar pedidos
 GET http://localhost:3000/api/pedidos
 
 ###
+// Deletar pedidos
 DELETE http://localhost:3000/api/pedidos/1
 
 ###
+// Finalizar pedidos
 PATCH http://localhost:3000/api/pedidos/8
 Content-Type: application/json
 
 {
     "status": "finalizado"
 }
+
+###
+
+// Gerar relatorio
+GET http://localhost:3000/api/pedidos/relatorio
+
+###
+
+// Cancelar pedido
+PATCH http://localhost:3000/api/pedidos/10/cancelar
